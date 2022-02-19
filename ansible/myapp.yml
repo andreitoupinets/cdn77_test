@@ -1,0 +1,25 @@
+- name: setup myapp using daemontools and start
+  hosts: nginx-backend
+  tasks:
+  - name: create /etc/service/myapp
+    copy:
+      src: myapp.py
+      dest: /usr/local/bin/myapp
+      mode: 0755
+  - name: create /etc/service/myapp
+    file:
+      dest: /etc/service/myapp
+      state: directory
+  - name: copy svscan myapp
+    copy:
+      src: files/svcscan_myapp
+      dest: /etc/service/myapp/run
+      mode: 0755
+  - name: Check if svscanboot is running
+    shell: pgrep svscanboot
+    changed_when: false
+    ignore_errors: yes
+    register: svscanboot_start
+  - name: start supervise
+    shell: "nohup /usr/bin/svscanboot </dev/null >/dev/stdout 2>&1 &"
+    when: svscanboot_start.rc !=0

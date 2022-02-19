@@ -1,0 +1,14 @@
+# {{ ansible_managed }}
+[Interface]
+Address = 10.255.13.{{ ansible_default_ipv4.address.split('.')[-1]}}/24
+ListenPort = 51820
+PrivateKey = {{ server_privkey }}
+
+{% for node in groups['all'] %}
+{% if inventory_hostname != hostvars[node]['inventory_hostname'] %}
+[Peer]
+PublicKey = {{ hostvars[node].pubkey }}
+Endpoint = {{ hostvars[node]['inventory_hostname'] }}:51820
+AllowedIPs = 10.255.13.{{ hostvars[node]['ansible_facts']['eth0']['ipv4']['address'].split('.')[-1] }}/32
+{% endif %}
+{% endfor %}

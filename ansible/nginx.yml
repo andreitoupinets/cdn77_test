@@ -1,0 +1,44 @@
+- name: nginx SERVERS
+  hosts: nginx-cdn,nginx-backend
+  tasks:
+  - name: install nginx packages
+    apt:
+      pkg:
+        - nginx
+        - python3-requests
+
+- name: Setup BACKEND nginx server
+  hosts: nginx-backend
+  tasks:
+  - name: setup default webserver
+    template:
+      src: nginx-backend_server.conf.j2
+      dest: "/etc/nginx/sites-enabled/default"
+- name: Setup CDN nginx server
+  hosts: nginx-cdn
+  tasks:
+  - name: setup default webserver
+    template:
+      src: nginx-cdn_server.conf.j2
+      dest: "/etc/nginx/sites-enabled/default"
+
+- name: setup nginx using daemontools and start
+  hosts: nginx-cdn,nginx-backend
+  tasks:
+  - name: create /etc/service/nginx
+    file:
+      dest: /etc/service/nginx
+      state: directory
+  - name: copy svscan nginx
+    copy:
+      src: files/svcscan_nginx
+      dest: /etc/service/nginx/run
+      mode: 0755
+  - name: Check if svscanboot is running
+    shell: pgrep svscanboot
+    changed_when: false
+    ignore_errors: yes
+    register: svscanboot_start
+  - name: start supervise
+    shell: "nohup /usr/bin/svscanboot </dev/null >/dev/stdout 2>&1 &"
+    when: svscanboot_start.rc != 0

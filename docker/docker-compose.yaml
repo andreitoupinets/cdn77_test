@@ -1,0 +1,113 @@
+version: '3.7'
+
+networks:
+  app_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24
+services:
+  nginx-cdn:
+    build: .
+    container_name: nginx-cdn
+    hostname: nginx-cdn
+    volumes:
+      - ${PWD}/.ssh:/root/.ssh
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.14
+    ports:
+      - 2214:22/tcp
+      - 8880:80/tcp
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+  nginx-backend:
+    build: .
+    container_name: nginx-backend
+    hostname: nginx-backend
+    volumes:
+      - ${PWD}/.ssh:/root/.ssh
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.13
+    ports:
+      - 2213:22/tcp
+      - 8881:80/tcp
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+  vpn-server:
+    build: .
+    container_name: vpn-server
+    hostname: vpn-server
+    volumes:
+      - ${PWD}/.ssh:/root/.ssh
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.12
+    ports:
+      - 2212:22/tcp
+    privileged: true
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+  prometheus:
+    build: .
+    container_name: prometheus
+    hostname: prometheus
+    volumes:
+      - ${PWD}/.ssh:/root/.ssh
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.11
+    ports:
+      - 2211:22/tcp
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+# Zookeeper servers
+  zoo-1:
+    build: .
+    container_name: zoo-1
+    hostname: zoo-1
+    volumes:
+      - ${PWD}/.ssh:/root/.ssh
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.15
+    ports:
+      - 2215:22/tcp
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+  zoo-2:
+    build: .
+    container_name: zoo-2
+    hostname: zoo-2
+    volumes:
+      - ${PWD}/.ssh:/root/.ssh
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.16
+    ports:
+      - 2216:22/tcp
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+  zoo-3:
+    build: .
+    container_name: zoo-3
+    hostname: zoo-3
+    volumes:
+      - ${PWD}/.ssh:/root/.ssh
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.17
+    ports:
+      - 2217:22/tcp
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE

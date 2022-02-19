@@ -1,0 +1,9 @@
+groups:
+- name: example-node-exporter-rules
+  rules:
+    - alert: LoadAvg5m
+      expr: node_load5 >= 0.75
+      labels:
+        severity: major
+      annotations:
+        summary: "Instance {{ $labels.instance }} - high load average"

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+exec 2>&1
+cd /opt/grafana
+export GF_SERVER_DOMAIN=localhost:8880
+export GF_SERVER_ROOT_URL=http://localhost:8880/grafana/
+export GF_SERVER_SERVE_FROM_SUB_PATH=True
+exec runuser -u www-data /opt/grafana/bin/grafana-server

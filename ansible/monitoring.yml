@@ -1,0 +1,97 @@
+- name: setup node-exporter & daemontools for all hosts
+  hosts: all
+  tasks:
+  - name: install packages
+    apt:
+      pkg:
+        - daemontools
+        - daemontools-run
+        - prometheus-node-exporter
+  - name: create /etc/service/node-exporter
+    file:
+      dest: /etc/service/node-exporter
+      state: directory
+  - name: copy svscan node-exporter
+    copy:
+      src: files/svcscan_node-exporter
+      dest: /etc/service/node-exporter/run
+      mode: 0755
+  - name: Check if svscanboot is running
+    shell: pgrep svscanboot
+    changed_when: false
+    ignore_errors: yes
+    register: svscanboot_start
+  - name: start supervise
+    shell: "nohup /usr/bin/svscanboot </dev/null >/dev/stdout 2>&1 &"
+    when: svscanboot_start.rc !=0
+
+- name: PROMETHEUS SERVER
+  hosts: prometheus
+  tasks:
+  - name: install prometheus & alertmanager packages
+    apt:
+      pkg:
+        - curl
+        - prometheus
+        - prometheus-alertmanager
+  - name: dowload Grafana
+    shell: "curl -Ls https://dl.grafana.com/oss/release/grafana-8.4.1.linux-amd64.tar.gz | tar -xz -C /opt/ --one-top-level=grafana --strip-components=1"
+    args:
+      warn: false # ignore warning about builtin curl module
+      creates: /opt/grafana
+  - name: chmod /opt/grafana/data
+    file:
+      path: /opt/grafana/data
+      recurse: yes
+      state: directory
+      mode: 0755
+      owner: www-data
+  - name: setup datasources for grafana
+    copy:
+      src: grafana_ds.yaml
+      dest: /opt/grafana/conf/provisioning/datasources/datasources.yaml
+  - name: setup dashboard provisioning for grafana
+    copy:
+      src: grafana_provision_dboard.yaml
+      dest: /opt/grafana/conf/provisioning/dashboards/dboards.yaml
+  - name: create /opt/grafana/dashboards
+    file:
+      path: "/opt/grafana/dashboards"
+      state: directory
+  - name: copy json dashboard Load1
+    copy:
+      src: grafana_dboard.json
+      dest: /opt/grafana/dashboards/load1.json
+      mode: 0755
+      owner: www-data
+  - name: create /etc/service/
+    with_items:
+      - grafana
+      - prometheus
+      - alertmanager
+    file:
+      dest: "/etc/service/{{ item }}"
+      state: directory
+  - name: "copy {{ item }} svscan to /etc/service/"
+    with_items:
+      - grafana
+      - prometheus
+      - alertmanager
+    copy:
+      src: "files/svcscan_{{ item }}"
+      dest: "/etc/service/{{ item }}/run"
+      mode: 0755
+  - name: setup prometheus.yml
+    template:
+      dest: /etc/prometheus/prometheus.yml
+      src: prometheus.yml.j2
+      owner: prometheus
+      group: prometheus
+      mode: '0755'
+  - name: create rules.yml
+    copy:
+      src: rules.yml
+      dest: "/etc/prometheus/rules.yml"
+      owner: prometheus
+  - name: reload prometheus
+    shell: "kill -HUP $(pgrep prometheus)"

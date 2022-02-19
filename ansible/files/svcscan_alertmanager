@@ -1,0 +1,4 @@
+#!/bin/sh
+
+exec 2>&1
+exec runuser -u prometheus /usr/bin/prometheus-alertmanager -- --web.external-url=http://localhost:8880/alertmanager/

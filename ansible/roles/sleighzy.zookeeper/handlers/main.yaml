@@ -1,0 +1,4 @@
+---
+- name: Restart ZooKeeper service
+  shell: "{{ zookeeper_dir }}/bin/zkServer.sh restart"
+  when: zookeeper_restart

@@ -1,0 +1,9 @@
+- hosts: zookeeper-nodes
+  pre_tasks:
+    - name: install java
+      apt:
+        pkg:
+          - ca-certificates-java
+          - default-jre-headless
+  roles:
+    - sleighzy.zookeeper
